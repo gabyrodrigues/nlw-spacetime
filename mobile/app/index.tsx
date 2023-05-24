@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
+import { ImageBackground, View, Text, TouchableOpacity } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { useAuthRequest, makeRedirectUri } from 'expo-auth-session'
-import { ImageBackground, View, Text, TouchableOpacity } from 'react-native'
+import { useRouter } from 'expo-router'
 import * as SecureStore from 'expo-secure-store'
 
 import {
@@ -12,12 +13,12 @@ import {
 
 import { BaiJamjuree_700Bold } from '@expo-google-fonts/bai-jamjuree'
 
-import blurBg from './src/assets/bg-blur.png'
-import Stripes from './src/assets/stripes.svg'
-import NLWLogo from './src/assets/nlw-spacetime-logo.svg'
+import blurBg from '../src/assets/bg-blur.png'
+import Stripes from '../src/assets/stripes.svg'
+import NLWLogo from '../src/assets/nlw-spacetime-logo.svg'
 
 import { styled } from 'nativewind'
-import { api } from './src/lib/api'
+import { api } from '../src/lib/api'
 
 const StyledStripes = styled(Stripes)
 
@@ -29,13 +30,15 @@ const discovery = {
 }
 
 export default function App() {
+  const router = useRouter()
+
   const [hasLoadedFonts] = useFonts({
     Roboto_400Regular,
     Roboto_700Bold,
     BaiJamjuree_700Bold,
   })
 
-  const [request, response, signInWithGithub] = useAuthRequest(
+  const [, response, signInWithGithub] = useAuthRequest(
     {
       clientId: 'c8f0fd87ffe3a41c43ac',
       scopes: ['identity'],
@@ -56,20 +59,21 @@ export default function App() {
     if (response?.type === 'success') {
       const { code } = response.params
 
-      api
-        .post('/register', {
-          code,
-        })
-        .then((response) => {
-          const { token } = response.data
-
-          SecureStore.setItemAsync('token', token)
-        })
-        .catch((error) => {
-          console.log(error)
-        })
+      handleGithubOAuthCode(code)
     }
   }, [response])
+
+  async function handleGithubOAuthCode(code: string) {
+    const response = await api.post('/register', {
+      code,
+    })
+
+    const { token } = response.data
+
+    await SecureStore.setItemAsync('token', token)
+
+    router.push('/memories')
+  }
 
   if (!hasLoadedFonts) return null
 
