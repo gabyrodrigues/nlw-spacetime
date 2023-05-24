@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { StatusBar } from 'expo-status-bar'
 import { useAuthRequest, makeRedirectUri } from 'expo-auth-session'
 import { ImageBackground, View, Text, TouchableOpacity } from 'react-native'
+import * as SecureStore from 'expo-secure-store'
 
 import {
   useFonts,
@@ -16,6 +17,7 @@ import Stripes from './src/assets/stripes.svg'
 import NLWLogo from './src/assets/nlw-spacetime-logo.svg'
 
 import { styled } from 'nativewind'
+import { api } from './src/lib/api'
 
 const StyledStripes = styled(Stripes)
 
@@ -53,7 +55,19 @@ export default function App() {
 
     if (response?.type === 'success') {
       const { code } = response.params
-      console.log(code)
+
+      api
+        .post('/register', {
+          code,
+        })
+        .then((response) => {
+          const { token } = response.data
+
+          SecureStore.setItemAsync('token', token)
+        })
+        .catch((error) => {
+          console.log(error)
+        })
     }
   }, [response])
 
